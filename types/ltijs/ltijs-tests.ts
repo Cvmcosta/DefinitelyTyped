@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Provider, IdToken } from 'ltijs';
 
-const ltiMinimal = new Provider('EXAMPLEKEY', {
+const ltiMinimal = Provider.setup('EXAMPLEKEY', {
     url: 'mongodb://localhost/database',
 });
 
@@ -27,9 +27,10 @@ const idToken: IdToken = {
         lineItems: '',
         lineItem: '',
     },
+    clientId: "test"
 };
 
-const ltiAdvanced = new Provider(
+const ltiAdvanced = Provider.setup(
     'EXAMPLEKEY',
     {
         url: 'mongodb://localhost/database',
@@ -39,11 +40,11 @@ const ltiAdvanced = new Provider(
         },
     },
     {
-        appUrl: '/',
-        loginUrl: '/login',
-        sessionTimeoutUrl: '/sessionTimeout',
-        invalidTokenUrl: '/invalidToken',
-        keysetUrl: '/keys',
+        appRoute: '/',
+        loginRoute: '/login',
+        sessionTimeoutRoute: '/sessionTimeout',
+        invalidTokenRoute: '/invalidToken',
+        keysetRoute: '/keys',
         staticPath: '/views',
         https: true,
         ssl: {
@@ -53,26 +54,29 @@ const ltiAdvanced = new Provider(
         cookies: {
             secure: true,
             sameSite: 'None',
+            domain: "example.example"
         },
+        devMode: false,
         serverAddon: app => { },
     },
 );
 
 // $ExpectType true
 ltiMinimal.onConnect(
-    (connection, request, response) => {
+    async (connection, request, response) => {
         console.log(connection.endpoint);
         ltiMinimal.redirect(response, '/main');
-    },
-    {
-        sessionTimeout: (req, res) => {
-            return res.send('Session timed out');
-        },
-        invalidToken: (req, res) => {
-            return res.send('Invalid token');
-        },
-    },
+    }
 );
+
+// $ExpectType true
+ltiMinimal.onInvalidToken(async (req, res) => {
+    return res.send('Session timed out');
+})
+
+ltiMinimal.onSessionTimeout(async (req, res) => {
+    return res.send('Invalid token');
+})
 
 ltiAdvanced.app.get('/main', (req: Request, res: Response) => {
     res.send("It's alive!");
@@ -82,7 +86,7 @@ ltiAdvanced.app.get('/main', (req: Request, res: Response) => {
 ltiAdvanced.whitelist('/main', '/home', { route: '/route', method: 'POST' });
 
 // $ExpectType true
-ltiAdvanced.onDeepLinking((connection, request, response) => {
+ltiAdvanced.onDeepLinking(async (connection, request, response) => {
     ltiAdvanced.redirect(response, '/deeplink');
 });
 
@@ -150,4 +154,18 @@ ltiAdvanced.app.get('/any', (request: Request, response: Response) => {
 
     // $ExpectType IdToken | undefined
     response.locals.token;
+
+    // $ExpectType void
+    ltiAdvanced.redirect(response, "/main", {
+        newResource: true
+    });
 });
+
+// $ExpectType Promise<Array<Platform> | false> 
+ltiAdvanced.getAllPlatforms();
+
+// $ExpectType Promise<Platform | false> 
+ltiAdvanced.getPlatform("http://test", "test");
+
+// $ExpectType Promise<Array<Platform> | false> 
+ltiAdvanced.getPlatform("http://test");

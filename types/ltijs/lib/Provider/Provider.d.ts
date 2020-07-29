@@ -17,76 +17,88 @@ export interface DeploymentOptions {
     serverless?: boolean;
 }
 
+export interface CookieOptions {
+    secure?: boolean;
+    sameSite?: string;
+    domain?: string;
+}
+
+export interface SSLOptions {
+    key: string;
+    cert: string;
+}
+
 export interface ProviderOptions {
-    appUrl?: string;
-    loginUrl?: string;
-    sessionTimeoutUrl?: string;
-    invalidTokenUrl?: string;
-    keysetUrl?: string;
+    appRoute?: string;
+    loginRoute?: string;
+    sessionTimeoutRoute?: string;
+    invalidTokenRoute?: string;
+    keysetRoute?: string;
     https?: boolean;
-    ssl?: {
-        key: string;
-        cert: string;
-    };
+    ssl?: SSLOptions;
     staticPath?: string;
     logger?: boolean;
     cors?: boolean;
     serverAddon?: ServerAddonFunction;
-    cookies?: {
-        secure?: boolean;
-        sameSite?: string;
-    };
+    cookies?: CookieOptions;
+    tokenMaxAge?: number;
+    devMode?: boolean;
 }
 
-export interface OnConnectCallback {
-    (connection: IdToken, request: Request, response: Response, next: NextFunction): Response | void;
+interface ConnectionCallback {
+    (connection: IdToken, request: Request, response: Response, next: NextFunction): Promise<Response | void>;
 }
 
-export interface OnConnectOptions {
-    sessionTimeout?: (request: Request, response: Response) => Response;
-    invalidToken?: (request: Request, response: Response) => Response;
+interface ErrorCallback {
+    (req: Request, res: Response): Promise<Response | void>;
 }
 
 export interface RedirectOptions {
-    isNewResource?: boolean;
+    newResource?: boolean;
     ignoreRoot?: boolean;
 }
 
 export class Provider {
-    app: Express;
+    readonly app: Express;
 
-    Database: Database;
-    Grade: GradeService;
-    DeepLinking: DeepLinkingService;
-    NamesAndRoles: NamesAndRolesService;
+    readonly Database: Database;
+    readonly Grade: GradeService;
+    readonly DeepLinking: DeepLinkingService;
+    readonly NamesAndRoles: NamesAndRolesService;
 
-    constructor(encryptionKey: string, database: DatabaseOptions, options?: ProviderOptions);
+    static setup(encryptionKey: string, database: DatabaseOptions, options?: ProviderOptions): Provider;
 
     deploy(options?: DeploymentOptions): Promise<true | undefined>;
 
     close(): Promise<boolean>;
 
-    onConnect(_connectCallback: OnConnectCallback, options?: OnConnectOptions): true;
+    onConnect(_connectCallback: ConnectionCallback): true;
 
-    onDeepLinking(_connectCallback: OnConnectCallback, options?: OnConnectOptions): true;
+    onDeepLinking(_connectCallback: ConnectionCallback): true;
 
-    loginUrl(): string;
+    onInvalidToken(_invalidTokenCallback: ErrorCallback): true;
 
-    appUrl(): string;
+    onSessionTimeout(_sessionTimeoutCallback: ErrorCallback): true;
 
-    sessionTimeoutUrl(): string;
+    loginRoute(): string;
 
-    invalidTokenUrl(): string;
+    appRoute(): string;
 
-    keysetUrl(): string;
+    sessionTimeoutRoute(): string;
+
+    invalidTokenRoute(): string;
+
+    keysetRoute(): string;
 
     whitelist(...urls: Array<string | { route: string; method: string }>): true;
 
     registerPlatform(config: PlatformConfig): Promise<Platform | false>;
 
-    getPlatform(url: string): Promise<Platform | false>;
+    getPlatform(url: string): Promise<Array<Platform> | false>;
 
-    deletePlatform(url: string): Promise<boolean>;
+    getPlatform(url: string, clientId: string): Promise<Platform | false>;
+
+    deletePlatform(url: string, clientId: string): Promise<boolean>;
 
     getAllPlatforms(): Promise<Platform[] | false>;
 

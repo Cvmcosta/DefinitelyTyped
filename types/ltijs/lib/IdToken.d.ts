@@ -7,6 +7,12 @@ export interface UserInfo {
     email: string;
 }
 
+export interface Endpoint {
+    scope: string[];
+    lineItems: string;
+    lineItem: string;
+}
+
 export interface IdToken {
     iss: string;
     issuerCode: string;
@@ -14,9 +20,6 @@ export interface IdToken {
     roles: string[];
     userInfo: UserInfo;
     platformInfo: PlatformInfo;
-    endpoint: {
-        scope: string[];
-        lineItems: string;
-        lineItem: string;
-    };
+    endpoint: Endpoint;
+    clientId: string;
 }

@@ -1,4 +1,4 @@
-// Type definitions for ltijs 4.0
+// Type definitions for ltijs 5.0
 // Project: https://cvmcosta.github.io/ltijs
 // Definitions by: Paul Schwörer <https://github.com/paulschwoerer/>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
